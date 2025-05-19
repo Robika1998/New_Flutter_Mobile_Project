@@ -14,44 +14,35 @@ void main() async {
   Session.token = prefs.getString('auth_token');
   Session.refreshToken = prefs.getString('refresh_token');
 
-  if (Session.token != null) {
-    try {
+  bool isAuthorized = false;
+
+  if (Session.token != null && Session.refreshToken != null) {
+    if (JwtDecoder.isExpired(Session.token!)) {
+      isAuthorized = await TokenService.refreshToken();
+      if (!isAuthorized) {
+        print('❌ Refresh failed, user must login.');
+      }
+    } else {
+      isAuthorized = true;
       final claims = JwtDecoder.decode(Session.token!);
       Session.decodedUserId = claims['Id']?.toString();
-      print('✅ decodedUserId = ${Session.decodedUserId}');
-
-      if (JwtDecoder.isExpired(Session.token!)) {
-        try {
-          await TokenService.refreshToken();
-        } catch (e) {
-          print('❌ Initial token refresh failed: $e');
-          await prefs.remove('auth_token');
-          await prefs.remove('refresh_token');
-          Session.token = null;
-          Session.refreshToken = null;
-          Session.decodedUserId = null;
-        }
-      }
-    } catch (e) {
-      print('❌ JWT decode error: $e');
-      await prefs.remove('auth_token');
-      await prefs.remove('refresh_token');
-      Session.token = null;
-      Session.refreshToken = null;
-      Session.decodedUserId = null;
     }
   }
 
-  runApp(MyApp());
+  runApp(MyApp(isAuthorized: isAuthorized));
 }
 
 class MyApp extends StatelessWidget {
+  final bool isAuthorized;
+
+  const MyApp({required this.isAuthorized});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MyKeyBox',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: Session.token != null ? HomeScreen() : LoginScreen(),
+      home: isAuthorized ? HomeScreen() : LoginScreen(),
     );
   }
 }

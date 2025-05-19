@@ -63,7 +63,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getOrderById(String orderId) async {
     final uri = Uri.parse(
-      'https://mykeybox.com/dealership-module/Member/GetOrderById/$orderId',
+      'http://back.mykeybox.com/api/dealership-module/Member/GetOrderById/$orderId',
     );
 
     final response = await authenticatedRequest(() async {
