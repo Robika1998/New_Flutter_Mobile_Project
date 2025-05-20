@@ -72,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen>
     required String label,
     required TextEditingController controller,
     required FocusNode focusNode,
+    required IconData icon,
     bool obscureText = false,
   }) {
     return AnimatedBuilder(
@@ -112,6 +113,10 @@ class _LoginScreenState extends State<LoginScreen>
               labelStyle: TextStyle(
                 color: hasFocus ? Colors.blueAccent : Colors.grey[500],
               ),
+              icon: Icon(
+                icon,
+                color: hasFocus ? Colors.blueAccent : Colors.grey[500],
+              ),
               border: InputBorder.none,
             ),
           ),
@@ -125,16 +130,13 @@ class _LoginScreenState extends State<LoginScreen>
     return Scaffold(
       backgroundColor: Color(0xFF121212),
       body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: Center(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(height: 0),
                 FadeTransition(
                   opacity: _logoOpacity,
                   child: Image.asset('assets/logo-light1.png', height: 150),
@@ -144,12 +146,14 @@ class _LoginScreenState extends State<LoginScreen>
                   label: 'Login',
                   controller: _loginCtrl,
                   focusNode: _loginFocus,
+                  icon: Icons.person,
                 ),
                 _buildAnimatedInput(
                   label: 'Password',
                   controller: _passCtrl,
                   focusNode: _passFocus,
                   obscureText: true,
+                  icon: Icons.lock,
                 ),
                 SizedBox(height: 30),
                 _loading

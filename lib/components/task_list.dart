@@ -1,48 +1,66 @@
-// widgets/task_list.dart
+// lib/components/task_list.dart
 import 'package:flutter/material.dart';
+import 'package:new_mykeybox_flutter/components/empty_state_widget.dart';
 import '../models/my_task.dart';
 import '../services/task_service.dart';
-import 'loading_indicator.dart';
-import 'error_display.dart';
-import 'empty_state_widget.dart';
 import 'task_card.dart';
 
-class TaskList extends StatelessWidget {
+class TaskList extends StatefulWidget {
   final String memberId;
-  const TaskList({required this.memberId});
+  const TaskList({Key? key, required this.memberId}) : super(key: key);
+
+  @override
+  TaskListState createState() => TaskListState();
+}
+
+class TaskListState extends State<TaskList> {
+  late Future<List<MyTask>> _tasksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  void _loadTasks() {
+    _tasksFuture = ApiService.getMyTasks(widget.memberId);
+  }
+
+  Future<void> refresh() async {
+    _loadTasks();
+    setState(() {});
+    await _tasksFuture;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MyTask>>(
-      future: ApiService.getMyTasks(memberId),
-      builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return LoadingIndicator();
-        }
-        if (snap.hasError) {
-          return ErrorDisplay(error: snap.error.toString());
-        }
-        final tasks = snap.data ?? [];
-        if (tasks.isEmpty) {
-          return EmptyStateWidget();
-        }
-        return RefreshIndicator(
-          onRefresh: () async {
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (_, __, ___) => TaskList(memberId: memberId),
-                transitionDuration: Duration.zero,
+    return RefreshIndicator(
+      onRefresh: refresh,
+      child: FutureBuilder<List<MyTask>>(
+        future: _tasksFuture,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Text(
+                'Failed to load tasks',
+                style: TextStyle(color: Colors.red),
               ),
             );
-          },
-          child: ListView.builder(
-            padding: EdgeInsets.all(8),
+          }
+          final tasks = snap.data!;
+          if (tasks.isEmpty) {
+            return EmptyStateWidget();
+          }
+          return ListView.builder(
+            physics: AlwaysScrollableScrollPhysics(),
             itemCount: tasks.length,
             itemBuilder: (_, i) => TaskCard(task: tasks[i]),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

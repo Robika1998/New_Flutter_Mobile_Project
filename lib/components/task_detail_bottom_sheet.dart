@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/my_task.dart';
 import '../services/task_service.dart';
 
-/// Entry point to show the modal bottom sheet
 class TaskDetailBottomSheet {
   static void show(BuildContext context, MyTask task) {
     showModalBottomSheet(
@@ -28,7 +27,6 @@ class TaskDetailBottomSheet {
   }
 }
 
-/// The actual content inside the modal
 class TaskDetailContent extends StatelessWidget {
   final MyTask task;
   final ScrollController scrollController;
@@ -69,7 +67,6 @@ class TaskDetailContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Grab handle
                 Center(
                   child: Container(
                     width: 50,
@@ -93,7 +90,6 @@ class TaskDetailContent extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
 
-                // Vehicle Information card
                 _DetailCard(
                   title: 'Vehicle Information',
                   items: [
@@ -104,7 +100,6 @@ class TaskDetailContent extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
 
-                // Information card
                 _DetailCard(
                   title: 'Information',
                   items: [
@@ -116,7 +111,6 @@ class TaskDetailContent extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
 
-                // Timing card
                 _DetailCard(
                   title: 'Timing',
                   items: [
@@ -126,7 +120,6 @@ class TaskDetailContent extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
 
-                // Additional Information card
                 _DetailCard(
                   title: 'Additional Information',
                   items: [
@@ -143,7 +136,6 @@ class TaskDetailContent extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
 
-                // Confirmation card
                 _DetailCard(
                   title: 'Confirmation',
                   items: [
@@ -192,7 +184,6 @@ class TaskDetailContent extends StatelessWidget {
   }
 }
 
-/// A reusable card for each section in the modal
 class _DetailCard extends StatelessWidget {
   final String title;
   final List<Widget> items;
