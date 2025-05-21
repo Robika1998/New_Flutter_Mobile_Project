@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/login_type.dart';
 import '../services/api_service.dart';
 import 'home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -17,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen>
   final FocusNode _passFocus = FocusNode();
 
   bool _loading = false;
+  bool _rememberMe = false;
 
   late AnimationController _logoAnimController;
   late Animation<double> _logoOpacity;
@@ -24,7 +26,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-
     _logoAnimController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
@@ -35,6 +36,18 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     _logoAnimController.forward();
+    _loadCredentials();
+  }
+
+  Future<void> _loadCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('remember_me') ?? false;
+      if (_rememberMe) {
+        _loginCtrl.text = prefs.getString('saved_login') ?? '';
+        _passCtrl.text = prefs.getString('saved_password') ?? '';
+      }
+    });
   }
 
   @override
@@ -49,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _submit() async {
     setState(() => _loading = true);
+
     final creds = LoginType(
       login: _loginCtrl.text.trim(),
       password: _passCtrl.text.trim(),
@@ -57,6 +71,17 @@ class _LoginScreenState extends State<LoginScreen>
     final success = await ApiService.signIn(creds);
 
     setState(() => _loading = false);
+
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe && success) {
+      await prefs.setString('saved_login', creds.login);
+      await prefs.setString('saved_password', creds.password);
+    } else {
+      await prefs.remove('saved_login');
+      await prefs.remove('saved_password');
+    }
+    await prefs.setBool('remember_me', _rememberMe);
+
     if (success) {
       Navigator.of(
         context,
@@ -66,63 +91,6 @@ class _LoginScreenState extends State<LoginScreen>
         context,
       ).showSnackBar(SnackBar(content: Text('Login failed')));
     }
-  }
-
-  Widget _buildAnimatedInput({
-    required String label,
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required IconData icon,
-    bool obscureText = false,
-  }) {
-    return AnimatedBuilder(
-      animation: focusNode,
-      builder: (context, _) {
-        bool hasFocus = focusNode.hasFocus;
-        return AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          margin: EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: hasFocus ? Colors.grey[850] : Colors.grey[900],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: hasFocus ? Colors.blueAccent : Colors.grey[700]!,
-              width: 2,
-            ),
-            boxShadow:
-                hasFocus
-                    ? [
-                      BoxShadow(
-                        color: Colors.blueAccent.withOpacity(0.6),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                        offset: Offset(0, 0),
-                      ),
-                    ]
-                    : [],
-          ),
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            style: TextStyle(color: Colors.white),
-            obscureText: obscureText,
-            cursorColor: Colors.blueAccent,
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: TextStyle(
-                color: hasFocus ? Colors.blueAccent : Colors.grey[500],
-              ),
-              icon: Icon(
-                icon,
-                color: hasFocus ? Colors.blueAccent : Colors.grey[500],
-              ),
-              border: InputBorder.none,
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -155,12 +123,23 @@ class _LoginScreenState extends State<LoginScreen>
                   obscureText: true,
                   icon: Icons.lock,
                 ),
-                SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _rememberMe,
+                      onChanged: (bool? value) {
+                        setState(() => _rememberMe = value!);
+                      },
+                      activeColor: Colors.blueAccent,
+                    ),
+                    Text('Remember me', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+                SizedBox(height: 20),
                 _loading
                     ? CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.blueAccent,
-                      ),
+                      valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
                     )
                     : SizedBox(
                       width: double.infinity,
@@ -189,6 +168,52 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAnimatedInput({
+    required String label,
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required IconData icon,
+    bool obscureText = false,
+  }) {
+    return AnimatedBuilder(
+      animation: focusNode,
+      builder: (context, _) {
+        bool hasFocus = focusNode.hasFocus;
+        return AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          margin: EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: hasFocus ? Colors.grey[850] : Colors.grey[900],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasFocus ? Colors.blueAccent : Colors.grey[700]!,
+              width: 2,
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            style: TextStyle(color: Colors.white),
+            obscureText: obscureText,
+            cursorColor: Colors.blueAccent,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(
+                color: hasFocus ? Colors.blueAccent : Colors.grey[500],
+              ),
+              icon: Icon(
+                icon,
+                color: hasFocus ? Colors.blueAccent : Colors.grey[500],
+              ),
+              border: InputBorder.none,
+            ),
+          ),
+        );
+      },
     );
   }
 }

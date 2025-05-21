@@ -45,15 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
           // Text('MyKeyBox', style: TextStyle(fontSize: 20)),
         ],
       ),
+
       backgroundColor: Colors.blue[800],
       elevation: 0,
       actions: [
         PopupMenuButton<String>(
-          icon: Icon(
-            Icons.menu,
-            color: Colors.white,
-            size: 30,
-          ), // Increased icon size
+          icon: Icon(Icons.menu, color: Colors.white, size: 30),
+          offset: Offset(0, 50),
           onSelected: (value) async {
             if (value == 'delete_account' && memberId != null) {
               final confirmed = await showDialog<bool>(
